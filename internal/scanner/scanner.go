@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -106,16 +105,15 @@ func (s *Scanner) scanURL(targetURL string) Result {
 		BodySize:   0,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.client.Timeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	req, err := http.NewRequest(http.MethodGet, targetURL, nil)
 	if err != nil {
 		result.Error = fmt.Sprintf("创建请求失败: %v", err)
 		return result
 	}
 
-	req.Header.Set("User-Agent", s.userAgent)
+	if s.userAgent != "" {
+		req.Header.Set("User-Agent", s.userAgent)
+	}
 
 	resp, err := s.client.Do(req)
 	if err != nil {
