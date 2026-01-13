@@ -1,6 +1,6 @@
 # Binaries
-scan
-scan.exe
+/scan
+/scan.exe
 *.exe
 *.exe~
 *.dll

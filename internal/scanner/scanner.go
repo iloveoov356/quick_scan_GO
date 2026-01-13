@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -79,8 +80,10 @@ func (s *Scanner) ScanFile(filePath string) (<-chan Result, error) {
 			} else if line != "" {
 				// 非法URL也记录到结果
 				results <- Result{
-					URL:   line,
-					Error: "无效的URL格式",
+					URL:        line,
+					StatusCode: -1,
+					BodySize:   0,
+					Error:      "无效的URL格式",
 				}
 			}
 		}
@@ -97,7 +100,11 @@ func (s *Scanner) ScanFile(filePath string) (<-chan Result, error) {
 
 // scanURL 扫描单个URL
 func (s *Scanner) scanURL(targetURL string) Result {
-	result := Result{URL: targetURL}
+	result := Result{
+		URL:        targetURL,
+		StatusCode: -1, // 默认 -1 表示请求未成功
+		BodySize:   0,
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.client.Timeout)
 	defer cancel()
@@ -112,7 +119,7 @@ func (s *Scanner) scanURL(targetURL string) Result {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		result.Error = fmt.Sprintf("请求失败: %v", err)
+		result.Error = classifyError(err)
 		return result
 	}
 	defer resp.Body.Close()
@@ -128,6 +135,26 @@ func (s *Scanner) scanURL(targetURL string) Result {
 	result.BodySize = bodySize
 
 	return result
+}
+
+// classifyError 分类错误类型
+func classifyError(err error) string {
+	errStr := err.Error()
+
+	switch {
+	case strings.Contains(errStr, "no such host"):
+		return "DNS解析失败"
+	case strings.Contains(errStr, "connection refused"):
+		return "连接被拒绝"
+	case strings.Contains(errStr, "timeout") || strings.Contains(errStr, "deadline exceeded"):
+		return "请求超时"
+	case strings.Contains(errStr, "certificate") || strings.Contains(errStr, "tls"):
+		return "TLS/证书错误"
+	case strings.Contains(errStr, "connection reset"):
+		return "连接被重置"
+	default:
+		return fmt.Sprintf("请求失败: %v", err)
+	}
 }
 
 // isValidURL 验证URL格式是否合法

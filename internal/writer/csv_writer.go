@@ -41,15 +41,11 @@ func NewCSVWriter(filePath string) (*CSVWriter, error) {
 
 // WriteResult 写入单条扫描结果
 func (w *CSVWriter) WriteResult(result scanner.Result) error {
-	statusCode := ""
-	if result.StatusCode > 0 {
-		statusCode = strconv.Itoa(result.StatusCode)
-	}
+	// 状态码：错误时为 -1，成功时为实际状态码
+	statusCode := strconv.Itoa(result.StatusCode)
 
-	bodySize := ""
-	if result.BodySize > 0 {
-		bodySize = strconv.FormatInt(result.BodySize, 10)
-	}
+	// Body大小：始终显示数字，错误时为 0
+	bodySize := strconv.FormatInt(result.BodySize, 10)
 
 	record := []string{
 		statusCode,
