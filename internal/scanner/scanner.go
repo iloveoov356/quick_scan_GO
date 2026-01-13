@@ -71,12 +71,22 @@ func (s *Scanner) ScanFile(filePath string) (<-chan Result, error) {
 		defer close(urls)
 		defer file.Close()
 
+		seen := make(map[string]bool) // 用于去重
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			line := scanner.Text()
+			if line == "" {
+				continue
+			}
+			// 跳过重复URL
+			if seen[line] {
+				continue
+			}
+			seen[line] = true
+
 			if isValidURL(line) {
 				urls <- line
-			} else if line != "" {
+			} else {
 				// 非法URL也记录到结果
 				results <- Result{
 					URL:        line,
