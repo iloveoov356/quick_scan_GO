@@ -43,7 +43,7 @@ func Parse() (*Config, error) {
 
 	// 设置默认输出路径
 	if cfg.OutputPath == "" {
-		cfg.OutputPath = fmt.Sprintf("result_%d.csv", time.Now().Unix())
+		cfg.OutputPath = fmt.Sprintf("result_%s.csv", time.Now().Format("2006-01-02__15-04-05"))
 	}
 
 	return cfg, nil
