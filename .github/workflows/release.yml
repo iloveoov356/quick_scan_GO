@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*" # 当推送 v 开头的 tag 时触发，如 v1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Windows
+          - os: windows
+            arch: amd64
+            ext: .exe
+          # Linux
+          - os: linux
+            arch: amd64
+            ext: ""
+          # macOS Intel
+          - os: darwin
+            arch: amd64
+            ext: ""
+          # macOS Apple Silicon (M芯片)
+          - os: darwin
+            arch: arm64
+            ext: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -ldflags="-s -w" -o scan${{ matrix.ext }} ./cmd/scan
+
+      - name: Create archive
+        run: |
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            zip scan-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}.zip scan${{ matrix.ext }} README.md
+          else
+            tar -czvf scan-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz scan${{ matrix.ext }} README.md
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            *.zip
+            *.tar.gz
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+          body: |
+            ## URL扫描工具 ${{ steps.version.outputs.VERSION }}
+
+            ### 下载
+            - **Windows (64-bit)**: `scan-${{ steps.version.outputs.VERSION }}-windows-amd64.zip`
+            - **Linux (64-bit)**: `scan-${{ steps.version.outputs.VERSION }}-linux-amd64.tar.gz`
+            - **macOS Intel**: `scan-${{ steps.version.outputs.VERSION }}-darwin-amd64.tar.gz`
+            - **macOS Apple Silicon (M芯片)**: `scan-${{ steps.version.outputs.VERSION }}-darwin-arm64.tar.gz`
+
+            ### 使用方法
+            ```bash
+            ./scan -f <url文件> -n <并发数> -t <超时秒数> -o <输出文件>
+            ```
