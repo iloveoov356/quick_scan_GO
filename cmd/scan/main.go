@@ -8,6 +8,7 @@ import (
 
 	"quick_scan/internal/config"
 	"quick_scan/internal/scanner"
+	"quick_scan/internal/utils"
 	"quick_scan/internal/writer"
 )
 
@@ -21,7 +22,21 @@ func main() {
 
 	fmt.Printf("开始扫描...\n")
 	fmt.Printf("  输入文件: %s\n", cfg.FilePath)
-	fmt.Printf("  并发数: %d\n", cfg.Threads)
+	// 计算总行数以用于进度条和动态并发数
+	totalLines, err := scanner.CountUniqueLines(cfg.FilePath)
+	if err != nil {
+		fmt.Printf("无法计算文件行数: %v\n", err)
+	}
+
+	// 动态计算并发数
+	if cfg.Threads == 0 {
+		var cpuCores int
+		cfg.Threads, cpuCores = utils.CalculateConcurrency(totalLines)
+		fmt.Printf("  并发数: %d (自动调整: %d核CPU)\n", cfg.Threads, cpuCores)
+	} else {
+		fmt.Printf("  并发数: %d\n", cfg.Threads)
+	}
+
 	fmt.Printf("  超时: %v\n", cfg.Timeout)
 	fmt.Printf("  输出文件: %s\n", cfg.OutputPath)
 	fmt.Println()
@@ -51,13 +66,10 @@ func main() {
 		if err := csvWriter.WriteResult(result); err != nil {
 			fmt.Fprintf(os.Stderr, "写入结果失败: %v\n", err)
 		}
-		atomic.AddInt64(&count, 1)
-
-		// 每100条打印进度
-		if count%100 == 0 {
-			fmt.Printf("已处理: %d 条\n", count)
-		}
+		current := atomic.AddInt64(&count, 1)
+		utils.PrintProgressBar(current, totalLines)
 	}
+	fmt.Println() // 进度条完成后换行
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n扫描完成!\n")

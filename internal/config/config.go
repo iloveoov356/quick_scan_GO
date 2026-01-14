@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	DefaultThreads   = 4
+	DefaultThreads   = 0 // 0 表示自动根据CPU核心数动态调整
 	DefaultTimeout   = 30
 	DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
@@ -26,7 +26,7 @@ func Parse() (*Config, error) {
 	cfg := &Config{}
 
 	flag.StringVar(&cfg.FilePath, "f", "", "URL文件路径 (必填)")
-	flag.IntVar(&cfg.Threads, "n", DefaultThreads, "并发扫描数量")
+	flag.IntVar(&cfg.Threads, "n", DefaultThreads, "并发扫描数量 (0=自动，基于CPU核心数和任务量动态调整)")
 	timeoutSec := flag.Int("t", DefaultTimeout, "超时秒数")
 	flag.StringVar(&cfg.UserAgent, "ua", DefaultUserAgent, "自定义User-Agent")
 	flag.StringVar(&cfg.OutputPath, "o", "", "输出CSV路径 (默认: result_<timestamp>.csv)")

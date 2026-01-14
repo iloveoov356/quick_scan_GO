@@ -173,3 +173,28 @@ func isValidURL(str string) bool {
 	}
 	return u.Scheme == "http" || u.Scheme == "https"
 }
+
+// CountUniqueLines 计算文件中的唯一有效行数
+// 逻辑与ScanFile保持一致：跳过空行，去重
+func CountUniqueLines(path string) (int64, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	seen := make(map[string]bool)
+	var count int64
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+		if !seen[line] {
+			seen[line] = true
+			count++
+		}
+	}
+	return count, scanner.Err()
+}
