@@ -20,7 +20,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("URL Scanner v%s\n", config.Version)
+	// fmt.Printf("URL Scanner v%s\n", config.Version)
 	fmt.Printf("开始扫描...\n")
 	fmt.Printf("  输入文件: %s\n", cfg.FilePath)
 	// 计算总行数以用于进度条和动态并发数

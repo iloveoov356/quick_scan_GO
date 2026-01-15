@@ -10,8 +10,9 @@ const (
 	DefaultThreads   = 0 // 0 表示自动根据CPU核心数动态调整
 	DefaultTimeout   = 30
 	DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-	Version          = "0.0.6"
 )
+
+// var Version = "dev" // 默认值为 dev，可通过 -ldflags "-X 'quick_scan/internal/config.Version=v1.0.0'" 覆盖
 
 // Config 保存所有命令行配置参数
 type Config struct {
