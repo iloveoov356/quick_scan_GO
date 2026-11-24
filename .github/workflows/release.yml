@@ -103,5 +103,5 @@ jobs:
 
             ### 使用方法
             ```bash
-            ./scan -f <url文件> [-n <并发数>] [-t <超时秒数>] [-ua <User-Agent>] [-o <输出文件>] [-ok] [-no-html]
+            ./scan -f <url文件> [-n <并发数>] [-t <超时秒数>] [-ua <User-Agent>] [-o <输出文件>] [-ok] [-no-html] [-no-empty=false]
             ```

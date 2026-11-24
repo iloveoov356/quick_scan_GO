@@ -45,6 +45,9 @@ func main() {
 	if cfg.NoHTML {
 		fmt.Printf("  内容过滤: 剔除包含 HTML 标签的响应\n")
 	}
+	if cfg.NoEmpty {
+		fmt.Printf("  空包过滤: 剔除 Body 大小为 0 的记录\n")
+	}
 	fmt.Printf("  输出文件: %s\n", cfg.OutputPath)
 	fmt.Println()
 
@@ -71,7 +74,9 @@ func main() {
 	var count int64
 	var savedCount int64
 	for result := range results {
-		shouldSave := (!cfg.OnlyOK || result.StatusCode == 200) && (!cfg.NoHTML || !result.IsHTML)
+		shouldSave := (!cfg.OnlyOK || result.StatusCode == 200) &&
+			(!cfg.NoHTML || !result.IsHTML) &&
+			(!cfg.NoEmpty || result.BodySize > 0)
 		if shouldSave {
 			if err := csvWriter.WriteResult(result); err != nil {
 				fmt.Fprintf(os.Stderr, "写入结果失败: %v\n", err)
@@ -86,7 +91,7 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n扫描完成!\n")
-	if cfg.OnlyOK || cfg.NoHTML {
+	if cfg.OnlyOK || cfg.NoHTML || cfg.NoEmpty {
 		fmt.Printf("  总计扫描: %d 条URL (有效保留: %d 条)\n", count, savedCount)
 	} else {
 		fmt.Printf("  总计: %d 条URL\n", count)
