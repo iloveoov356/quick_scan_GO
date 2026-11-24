@@ -58,7 +58,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             zip scan-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}.zip scan${{ matrix.ext }} README.md
           else
-            tar -czvf scan-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz scan${{ matrix.ext }} README.md
+            tar --owner=0 --group=0 --numeric-owner -czvf scan-${{ steps.version.outputs.VERSION }}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz scan${{ matrix.ext }} README.md
           fi
 
       - name: Upload artifact
