@@ -57,21 +57,28 @@ http://example.com
 
 ## 输出格式
 
-CSV 包含 4 列：
+CSV 包含以下列（当 HTTP 响应头包含 `Subscription-Userinfo` 时自动解析订阅详情，缺失项留空）：
 
-| 列名             | 说明                     |
-| ---------------- | ------------------------ |
-| 状态码           | HTTP 状态码，错误时为 -1 |
-| Body 大小(bytes) | 响应体大小               |
-| URL              | 请求的 URL               |
-| 错误信息         | DNS 失败/超时/TLS 错误等 |
+| 列名             | 说明                                       |
+| ---------------- | ------------------------------------------ |
+| 状态码           | HTTP 状态码，错误时为 -1                   |
+| Body 大小(bytes) | 响应体大小                                 |
+| URL              | 请求的 URL                                 |
+| 已用流量         | `upload + download`，自动转换单位 (KB/GB)  |
+| 总流量           | `total`，自动转换单位 (KB/MB/GB/TB)        |
+| 剩余流量         | `total - 已用流量`，自动转换单位           |
+| 到期时间         | `expire` 转换为 `YYYY-MM-DD` 或 `长期有效` |
+| 重置日           | `reset_day` 流量重置日                     |
+| 套餐名称         | `plan_name` 套餐名称（支持 URL 解码）      |
+| 官网地址         | `app_url` 对应站点地址                     |
+| 错误信息         | DNS 失败/超时/TLS 错误等                   |
 
 示例输出：
 
 ```csv
-状态码,Body大小(bytes),URL,错误信息
-200,15234,https://www.google.com,
--1,0,https://nonexistent.com,DNS解析失败
+状态码,Body大小(bytes),URL,已用流量,总流量,剩余流量,到期时间,重置日,套餐名称,官网地址,错误信息
+200,15234,https://example.com/sub,11.00 KB,100.00 KB,89.00 KB,2100-06-06,14,VIP1,http://a.com,
+-1,0,https://nonexistent.com,,,,,,,,,DNS解析失败
 ```
 
 ## 特性

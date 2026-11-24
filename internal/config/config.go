@@ -9,7 +9,7 @@ import (
 const (
 	DefaultThreads   = 0 // 0 表示自动根据CPU核心数动态调整
 	DefaultTimeout   = 30
-	DefaultUserAgent = "quantumult x"
+	DefaultUserAgent = "v2rayN/6.60.0"
 )
 
 // var Version = "dev" // 默认值为 dev，可通过 -ldflags "-X 'quick_scan/internal/config.Version=v1.0.0'" 覆盖

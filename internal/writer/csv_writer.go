@@ -28,7 +28,20 @@ func NewCSVWriter(filePath string) (*CSVWriter, error) {
 	writer := csv.NewWriter(file)
 
 	// 写入表头
-	if err := writer.Write([]string{"状态码", "Body大小(bytes)", "URL", "错误信息"}); err != nil {
+	headers := []string{
+		"状态码",
+		"Body大小(bytes)",
+		"URL",
+		"已用流量",
+		"总流量",
+		"剩余流量",
+		"到期时间",
+		"重置日",
+		"套餐名称",
+		"官网地址",
+		"错误信息",
+	}
+	if err := writer.Write(headers); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("写入表头失败: %w", err)
 	}
@@ -47,14 +60,45 @@ func (w *CSVWriter) WriteResult(result scanner.Result) error {
 	// Body大小：始终显示数字，错误时为 0
 	bodySize := strconv.FormatInt(result.BodySize, 10)
 
+	var used, total, remain, expire, resetDay, planName, appURL string
+	if s := result.SubInfo; s != nil {
+		used = s.UsedTraffic
+		total = s.TotalTraffic
+		remain = s.RemainTraffic
+		expire = s.ExpireDate
+		resetDay = sanitizeCSVField(s.ResetDay)
+		planName = sanitizeCSVField(s.PlanName)
+		appURL = sanitizeCSVField(s.AppURL)
+	}
+
 	record := []string{
 		statusCode,
 		bodySize,
-		result.URL,
+		sanitizeCSVField(result.URL),
+		used,
+		total,
+		remain,
+		expire,
+		resetDay,
+		planName,
+		appURL,
 		result.Error,
 	}
 
 	return w.writer.Write(record)
+}
+
+// sanitizeCSVField 防御 CSV 公式注入（针对外部可控字符串）
+func sanitizeCSVField(s string) string {
+	if s == "" {
+		return ""
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	default:
+		return s
+	}
 }
 
 // Close 关闭CSV写入器

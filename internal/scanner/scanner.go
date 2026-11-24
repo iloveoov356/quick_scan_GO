@@ -18,6 +18,7 @@ type Result struct {
 	StatusCode int
 	BodySize   int64
 	Error      string
+	SubInfo    *SubscriptionInfo
 }
 
 // Scanner URL扫描器
@@ -133,6 +134,7 @@ func (s *Scanner) scanURL(targetURL string) Result {
 	defer resp.Body.Close()
 
 	result.StatusCode = resp.StatusCode
+	result.SubInfo = ExtractSubscriptionInfo(resp.Header)
 
 	// 读取并计算Body大小
 	bodySize, err := io.Copy(io.Discard, resp.Body)
