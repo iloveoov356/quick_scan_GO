@@ -42,11 +42,14 @@ func main() {
 	if cfg.OnlyOK {
 		fmt.Printf("  过滤规则: 仅保留状态码 200\n")
 	}
+	if cfg.NoHTML {
+		fmt.Printf("  内容过滤: 剔除包含 HTML 标签的响应\n")
+	}
 	fmt.Printf("  输出文件: %s\n", cfg.OutputPath)
 	fmt.Println()
 
 	// 创建扫描器
-	s := scanner.New(cfg.Timeout, cfg.UserAgent, cfg.Threads)
+	s := scanner.New(cfg.Timeout, cfg.UserAgent, cfg.Threads, cfg.NoHTML)
 
 	// 开始扫描
 	startTime := time.Now()
@@ -68,7 +71,8 @@ func main() {
 	var count int64
 	var savedCount int64
 	for result := range results {
-		if !cfg.OnlyOK || result.StatusCode == 200 {
+		shouldSave := (!cfg.OnlyOK || result.StatusCode == 200) && (!cfg.NoHTML || !result.IsHTML)
+		if shouldSave {
 			if err := csvWriter.WriteResult(result); err != nil {
 				fmt.Fprintf(os.Stderr, "写入结果失败: %v\n", err)
 			} else {
@@ -82,8 +86,8 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n扫描完成!\n")
-	if cfg.OnlyOK {
-		fmt.Printf("  总计扫描: %d 条URL (保留 200 状态码: %d 条)\n", count, savedCount)
+	if cfg.OnlyOK || cfg.NoHTML {
+		fmt.Printf("  总计扫描: %d 条URL (有效保留: %d 条)\n", count, savedCount)
 	} else {
 		fmt.Printf("  总计: %d 条URL\n", count)
 	}

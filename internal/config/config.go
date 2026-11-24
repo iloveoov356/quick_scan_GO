@@ -22,6 +22,7 @@ type Config struct {
 	UserAgent  string        // User-Agent
 	OutputPath string        // 输出CSV路径
 	OnlyOK     bool          // 仅保留状态码为200的结果
+	NoHTML     bool          // 过滤包含HTML标签的垃圾响应
 }
 
 // Parse 解析命令行参数并返回配置
@@ -34,6 +35,7 @@ func Parse() (*Config, error) {
 	flag.StringVar(&cfg.UserAgent, "ua", DefaultUserAgent, "自定义User-Agent")
 	flag.StringVar(&cfg.OutputPath, "o", "", "输出CSV路径 (默认: result_<timestamp>.csv)")
 	flag.BoolVar(&cfg.OnlyOK, "ok", false, "仅保留HTTP响应状态码为200的结果")
+	flag.BoolVar(&cfg.NoHTML, "no-html", false, "过滤响应体包含HTML标签(<html/<body/<head/<link/<title)的结果")
 
 	flag.Parse()
 
@@ -58,7 +60,7 @@ func PrintUsage() {
 	fmt.Println("URL扫描工具 - 批量检测URL状态")
 	fmt.Println()
 	fmt.Println("使用方法:")
-	fmt.Println("  ./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output_path>] [-ok]")
+	fmt.Println("  ./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output_path>] [-ok] [-no-html]")
 	fmt.Println()
 	fmt.Println("参数说明:")
 	flag.PrintDefaults()

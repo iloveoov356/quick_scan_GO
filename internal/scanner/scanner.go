@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,12 +13,21 @@ import (
 	"time"
 )
 
+var htmlSpamTags = [][]byte{
+	[]byte("<html"),
+	[]byte("<body"),
+	[]byte("<head"),
+	[]byte("<link"),
+	[]byte("<title"),
+}
+
 // Result 保存单个URL的扫描结果
 type Result struct {
 	URL        string
 	StatusCode int
 	BodySize   int64
 	Error      string
+	IsHTML     bool
 	SubInfo    *SubscriptionInfo
 }
 
@@ -26,10 +36,11 @@ type Scanner struct {
 	client    *http.Client
 	userAgent string
 	threads   int
+	checkHTML bool
 }
 
 // New 创建新的Scanner实例
-func New(timeout time.Duration, userAgent string, threads int) *Scanner {
+func New(timeout time.Duration, userAgent string, threads int, checkHTML bool) *Scanner {
 	client := &http.Client{
 		Timeout: timeout,
 		// 不跟随重定向,记录原始状态码
@@ -42,6 +53,7 @@ func New(timeout time.Duration, userAgent string, threads int) *Scanner {
 		client:    client,
 		userAgent: userAgent,
 		threads:   threads,
+		checkHTML: checkHTML,
 	}
 }
 
@@ -136,15 +148,74 @@ func (s *Scanner) scanURL(targetURL string) Result {
 	result.StatusCode = resp.StatusCode
 	result.SubInfo = ExtractSubscriptionInfo(resp.Header)
 
-	// 读取并计算Body大小
-	bodySize, err := io.Copy(io.Discard, resp.Body)
+	// 读取并计算Body大小，按需流式检测HTML垃圾标签
+	bodySize, isHTML, err := drainAndCheckHTML(resp.Body, s.checkHTML)
 	if err != nil {
 		result.Error = fmt.Sprintf("读取响应失败: %v", err)
 		return result
 	}
 	result.BodySize = bodySize
+	result.IsHTML = isHTML
 
 	return result
+}
+
+// drainAndCheckHTML 流式排空响应体统计字节数，并在开启检测时通过滑动窗口匹配 HTML 标签
+func drainAndCheckHTML(r io.Reader, checkHTML bool) (int64, bool, error) {
+	if !checkHTML {
+		n, err := io.Copy(io.Discard, r)
+		return n, false, err
+	}
+
+	const maxOverlap = 5 // 最长匹配词 "<title" 长度为 6，跨块边界需保留末尾 5 字节
+	buf := make([]byte, maxOverlap+32*1024)
+	overlap := 0
+	var total int64
+
+	for {
+		n, err := r.Read(buf[overlap:])
+		if n > 0 {
+			total += int64(n)
+			window := buf[:overlap+n]
+			if containsHTMLTag(window) {
+				if err == io.EOF {
+					return total, true, nil
+				}
+				if err != nil {
+					return total, true, err
+				}
+				rest, copyErr := io.Copy(io.Discard, r)
+				return total + rest, true, copyErr
+			}
+			if len(window) >= maxOverlap {
+				copy(buf[:maxOverlap], window[len(window)-maxOverlap:])
+				overlap = maxOverlap
+			} else {
+				overlap = len(window)
+			}
+		}
+		if err == io.EOF {
+			return total, false, nil
+		}
+		if err != nil {
+			return total, false, err
+		}
+	}
+}
+
+// containsHTMLTag 原地转换 ASCII 小写并检查是否包含任意 HTML 垃圾标签（零额外内存分配）
+func containsHTMLTag(b []byte) bool {
+	for i, c := range b {
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c + ('a' - 'A')
+		}
+	}
+	for _, tag := range htmlSpamTags {
+		if bytes.Contains(b, tag) {
+			return true
+		}
+	}
+	return false
 }
 
 // classifyError 分类错误类型

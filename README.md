@@ -19,19 +19,20 @@ go build -o scan ./cmd/scan
 ## 使用方法
 
 ```bash
-./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output>] [-ok]
+./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output>] [-ok] [-no-html]
 ```
 
 ### 参数
 
-| 参数  | 说明                           | 默认值                           |
-| ----- | ------------------------------ | -------------------------------- |
-| `-f`  | URL 文件路径（必填）           | -                                |
-| `-n`  | 并发数                         | 4                                |
-| `-t`  | 超时秒数                       | 30                               |
-| `-ua` | User-Agent                     | Mozilla/5.0 (Windows NT 10.0...) |
-| `-o`  | 输出 CSV 路径                  | result\_年-月-日\_\_时-分-秒.csv |
-| `-ok` | 仅保留 HTTP 状态码为 200 的结果 | false                            |
+| 参数       | 说明                                                                | 默认值                           |
+| ---------- | ------------------------------------------------------------------- | -------------------------------- |
+| `-f`       | URL 文件路径（必填）                                                | -                                |
+| `-n`       | 并发数                                                              | 4                                |
+| `-t`       | 超时秒数                                                            | 30                               |
+| `-ua`      | User-Agent                                                          | Mozilla/5.0 (Windows NT 10.0...) |
+| `-o`       | 输出 CSV 路径                                                       | result\_年-月-日\_\_时-分-秒.csv |
+| `-ok`      | 仅保留 HTTP 状态码为 200 的结果                                     | false                            |
+| `-no-html` | 过滤响应体包含 HTML 标签 (`<html`/`<body`/`<head`/`<link`/`<title`) | false                            |
 
 ### 示例
 
@@ -39,11 +40,11 @@ go build -o scan ./cmd/scan
 # 基础用法
 ./scan -f urls.txt
 
-# 仅保留状态码为 200 的结果
-./scan -f urls.txt -ok
+# 仅保留状态码为 200 且不含 HTML 垃圾页的结果
+./scan -f urls.txt -ok -no-html
 
 # 自定义参数
-./scan -f urls.txt -n 10 -t 15 -o output.csv -ok
+./scan -f urls.txt -n 10 -t 15 -o output.csv -ok -no-html
 ```
 
 ## URL 文件格式
