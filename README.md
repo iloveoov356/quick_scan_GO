@@ -95,8 +95,8 @@ CSV 包含以下列（当 HTTP 响应头包含 `Subscription-Userinfo` 时自动
 ## 发布新版本
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.0.1
+git push origin v0.0.1
 ```
 
 GitHub Actions 自动编译多平台版本。
