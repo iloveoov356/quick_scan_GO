@@ -39,6 +39,9 @@ func main() {
 	}
 
 	fmt.Printf("  超时: %v\n", cfg.Timeout)
+	if cfg.OnlyOK {
+		fmt.Printf("  过滤规则: 仅保留状态码 200\n")
+	}
 	fmt.Printf("  输出文件: %s\n", cfg.OutputPath)
 	fmt.Println()
 
@@ -63,9 +66,14 @@ func main() {
 
 	// 处理结果
 	var count int64
+	var savedCount int64
 	for result := range results {
-		if err := csvWriter.WriteResult(result); err != nil {
-			fmt.Fprintf(os.Stderr, "写入结果失败: %v\n", err)
+		if !cfg.OnlyOK || result.StatusCode == 200 {
+			if err := csvWriter.WriteResult(result); err != nil {
+				fmt.Fprintf(os.Stderr, "写入结果失败: %v\n", err)
+			} else {
+				savedCount++
+			}
 		}
 		current := atomic.AddInt64(&count, 1)
 		utils.PrintProgressBar(current, totalLines)
@@ -74,7 +82,11 @@ func main() {
 
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n扫描完成!\n")
-	fmt.Printf("  总计: %d 条URL\n", count)
+	if cfg.OnlyOK {
+		fmt.Printf("  总计扫描: %d 条URL (保留 200 状态码: %d 条)\n", count, savedCount)
+	} else {
+		fmt.Printf("  总计: %d 条URL\n", count)
+	}
 	fmt.Printf("  耗时: %v\n", elapsed)
 	fmt.Printf("  结果已保存到: %s\n", cfg.OutputPath)
 }

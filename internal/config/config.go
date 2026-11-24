@@ -21,6 +21,7 @@ type Config struct {
 	Timeout    time.Duration // 超时时间
 	UserAgent  string        // User-Agent
 	OutputPath string        // 输出CSV路径
+	OnlyOK     bool          // 仅保留状态码为200的结果
 }
 
 // Parse 解析命令行参数并返回配置
@@ -32,6 +33,7 @@ func Parse() (*Config, error) {
 	timeoutSec := flag.Int("t", DefaultTimeout, "超时秒数")
 	flag.StringVar(&cfg.UserAgent, "ua", DefaultUserAgent, "自定义User-Agent")
 	flag.StringVar(&cfg.OutputPath, "o", "", "输出CSV路径 (默认: result_<timestamp>.csv)")
+	flag.BoolVar(&cfg.OnlyOK, "ok", false, "仅保留HTTP响应状态码为200的结果")
 
 	flag.Parse()
 
@@ -56,7 +58,7 @@ func PrintUsage() {
 	fmt.Println("URL扫描工具 - 批量检测URL状态")
 	fmt.Println()
 	fmt.Println("使用方法:")
-	fmt.Println("  ./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output_path>]")
+	fmt.Println("  ./scan -f <file_path> [-n <threads>] [-t <timeout>] [-ua <user-agent>] [-o <output_path>] [-ok]")
 	fmt.Println()
 	fmt.Println("参数说明:")
 	flag.PrintDefaults()
